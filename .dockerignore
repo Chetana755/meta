@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env
+.venv
+.pytest_cache
+.vscode
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+tests
+security_alert_investigation
+openenv_security_alert_investigation.egg-info

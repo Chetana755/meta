@@ -1,0 +1,101 @@
+[
+  {
+    "task_id": "easy_malicious_bruteforce",
+    "difficulty": "easy",
+    "alert": {
+      "message": "Impossible-travel login followed by disabled-account brute-force attempts against finance-admin.",
+      "ip_address": "185.220.101.45"
+    },
+    "history": [
+      "Same IP triggered credential stuffing alerts against three privileged accounts in the previous 24 hours.",
+      "Endpoint telemetry shows no approved VPN association for the source IP.",
+      "User reported no travel and no expected login activity."
+    ],
+    "ip_reputation": "Known Tor exit node with repeated abuse reports for credential attacks.",
+    "frequency": "47 alerts from the same IP across 15 minutes, including repeated lockout events.",
+    "user_context": "finance-admin is a privileged identity with active payroll and treasury approvals. The account owner confirmed they were asleep during the activity window.",
+    "asset_criticality": "Targeted systems include payroll-admin and finance approval consoles classified as business-critical and high-impact.",
+    "expected_decision": {
+      "classification": "malicious",
+      "priority": "critical",
+      "decision": "contain"
+    },
+    "expected_investigation": {
+      "recommended_actions": [
+        "check_history",
+        "analyze_ip",
+        "check_frequency",
+        "check_user_context",
+        "check_asset_criticality"
+      ],
+      "minimum_actions_before_submit": 5
+    },
+    "narrative": "This is a clear account-compromise attempt from hostile infrastructure, against privileged finance identities, with immediate containment value."
+  },
+  {
+    "task_id": "medium_ambiguous_vendor_sync",
+    "difficulty": "medium",
+    "alert": {
+      "message": "New SaaS vendor sync generated an unusual login pattern for hr-automation from a cloud IP range.",
+      "ip_address": "52.95.110.12"
+    },
+    "history": [
+      "The account was onboarded for a pilot integration last week but change control was incomplete.",
+      "Similar alerts occurred twice during business hours with no downstream failures.",
+      "The user owner did not immediately confirm whether the workflow was expected."
+    ],
+    "ip_reputation": "Amazon cloud address with neutral reputation and no confirmed malicious listings.",
+    "frequency": "3 alerts over 2 days, all aligned to scheduled sync windows.",
+    "user_context": "hr-automation is a non-interactive service identity used by HR data sync jobs. The service owner says the pilot exists but cannot confirm this specific source range from memory.",
+    "asset_criticality": "The workflow reaches HR records with sensitive PII but no direct privileged admin controls. An interruption would affect onboarding and payroll support tasks.",
+    "expected_decision": {
+      "classification": "suspicious",
+      "priority": "medium",
+      "decision": "monitor"
+    },
+    "expected_investigation": {
+      "recommended_actions": [
+        "check_history",
+        "analyze_ip",
+        "check_frequency",
+        "check_user_context",
+        "check_asset_criticality"
+      ],
+      "minimum_actions_before_submit": 5
+    },
+    "narrative": "The behavior is not cleanly benign because governance is weak and sensitive data is involved, but current evidence favors controlled monitoring over escalation or containment."
+  },
+  {
+    "task_id": "hard_misleading_low_volume_exfil",
+    "difficulty": "hard",
+    "alert": {
+      "message": "Single successful service-account login from a residential ISP preceded a small archive transfer to an engineering share.",
+      "ip_address": "73.162.44.201"
+    },
+    "history": [
+      "The service account normally authenticates only from an internal jump host.",
+      "A matching alert six weeks ago was closed as noise after incomplete triage.",
+      "The archive name matched a standard backup naming pattern but was created manually."
+    ],
+    "ip_reputation": "No major blocklist hits; residential broadband allocation with limited public history.",
+    "frequency": "1 alert in the last 30 days, making the activity appear low-noise.",
+    "user_context": "The service account belongs to a legacy build pipeline and has no business reason to authenticate from employee home networks. The pipeline owner is on leave and unreachable for confirmation.",
+    "asset_criticality": "The engineering share contains release signing materials and deployment scripts. A small archive from this location can still enable downstream compromise.",
+    "expected_decision": {
+      "classification": "malicious",
+      "priority": "high",
+      "decision": "escalate"
+    },
+    "expected_investigation": {
+      "recommended_actions": [
+        "check_history",
+        "analyze_ip",
+        "check_frequency",
+        "check_user_context",
+        "check_asset_criticality"
+      ],
+      "minimum_actions_before_submit": 5
+    },
+    "narrative": "The IP looks ordinary and the volume is low, but identity misuse plus sensitive asset exposure makes this a subtle, high-risk investigation that should challenge shallow heuristics."
+  }
+]

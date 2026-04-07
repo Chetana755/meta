@@ -1,0 +1,10 @@
+.env
+.venv/
+.pytest_cache/
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+openenv_security_alert_investigation.egg-info/
+security_alert_investigation/

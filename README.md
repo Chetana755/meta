@@ -1,6 +1,6 @@
 ---
 title: Security Alert Investigation Environment
-emoji: robot
+emoji: 🤖
 colorFrom: blue
 colorTo: red
 sdk: docker

@@ -61,6 +61,21 @@ def build_security_ui(
         result = await web_manager.step_environment({"action_type": action_type})
         return _format_observation(result, web_manager.get_state())
 
+    async def handle_check_history():
+        return await handle_action("check_history")
+
+    async def handle_analyze_ip():
+        return await handle_action("analyze_ip")
+
+    async def handle_check_frequency():
+        return await handle_action("check_frequency")
+
+    async def handle_check_user_context():
+        return await handle_action("check_user_context")
+
+    async def handle_check_asset_criticality():
+        return await handle_action("check_asset_criticality")
+
     async def handle_submit(classification: str, priority: str, decision: str):
         result = await web_manager.step_environment(
             {
@@ -173,25 +188,12 @@ def build_security_ui(
         ]
 
         reset_btn.click(handle_reset, inputs=[difficulty, task_id], outputs=outputs)
-        check_history_btn.click(
-            fn=lambda: handle_action("check_history"),
-            outputs=outputs,
-        )
-        analyze_ip_btn.click(
-            fn=lambda: handle_action("analyze_ip"),
-            outputs=outputs,
-        )
-        check_frequency_btn.click(
-            fn=lambda: handle_action("check_frequency"),
-            outputs=outputs,
-        )
-        check_user_context_btn.click(
-            fn=lambda: handle_action("check_user_context"),
-            outputs=outputs,
-        )
+        check_history_btn.click(fn=handle_check_history, outputs=outputs)
+        analyze_ip_btn.click(fn=handle_analyze_ip, outputs=outputs)
+        check_frequency_btn.click(fn=handle_check_frequency, outputs=outputs)
+        check_user_context_btn.click(fn=handle_check_user_context, outputs=outputs)
         check_asset_criticality_btn.click(
-            fn=lambda: handle_action("check_asset_criticality"),
-            outputs=outputs,
+            fn=handle_check_asset_criticality, outputs=outputs
         )
         submit_btn.click(
             handle_submit,

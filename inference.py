@@ -8,11 +8,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import httpx
 from openai import OpenAI
 from openenv.core.containers.runtime import LocalDockerProvider
 
-from client import SecurityAlertInvestigationEnv
-from models import DecisionPayload, InvestigationAction, observation_to_text
+from models import DecisionPayload, InvestigationAction
 
 
 BENCHMARK = "security_alert_investigation"
@@ -132,24 +132,40 @@ def _log_end(success: bool, steps: int, rewards: list[float]) -> None:
     )
 
 
-def _create_env() -> Any:
-    if LOCAL_IMAGE_NAME:
-        provider = LocalDockerProvider()
-        base_url = provider.start_container(LOCAL_IMAGE_NAME)
-        provider.wait_for_ready(base_url)
-        return SecurityAlertInvestigationEnv(base_url=base_url, provider=provider).sync()
-    return SecurityAlertInvestigationEnv(base_url=ENV_BASE_URL).sync()
+def _start_local_image_if_needed() -> tuple[str, LocalDockerProvider | None]:
+    if not LOCAL_IMAGE_NAME:
+        return ENV_BASE_URL, None
+
+    provider = LocalDockerProvider()
+    base_url = provider.start_container(LOCAL_IMAGE_NAME)
+    provider.wait_for_ready(base_url)
+    return base_url.rstrip("/"), provider
 
 
-def _run_task(env: Any, client: OpenAI | None, task_id: str) -> float:
+def _reset(http_client: httpx.Client, base_url: str, task_id: str) -> dict[str, Any]:
+    response = http_client.post(f"{base_url}/reset", json={"task_id": task_id})
+    response.raise_for_status()
+    return response.json()
+
+
+def _step(http_client: httpx.Client, base_url: str, action: InvestigationAction) -> dict[str, Any]:
+    response = http_client.post(
+        f"{base_url}/step",
+        json={"action": action.model_dump(mode="json")},
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def _run_task(http_client: httpx.Client, base_url: str, client: OpenAI | None, task_id: str) -> float:
     rewards: list[float] = []
     steps_taken = 0
     success = False
     _log_start(task_id)
 
     try:
-        result = env.reset(task_id=task_id)
-        observation_payload = observation_to_text(result.observation)
+        reset_payload = _reset(http_client, base_url, task_id)
+        observation_payload = reset_payload["observation"]
         scripted_actions = [
             InvestigationAction(action_type="check_history"),
             InvestigationAction(action_type="analyze_ip"),
@@ -159,14 +175,15 @@ def _run_task(env: Any, client: OpenAI | None, task_id: str) -> float:
         ]
 
         for step_index, action in enumerate(scripted_actions, start=1):
-            result = env.step(action)
-            reward = float(result.reward or 0.0)
+            result = _step(http_client, base_url, action)
+            reward = float(result.get("reward") or 0.0)
+            done = bool(result.get("done"))
             rewards.append(reward)
             steps_taken = step_index
-            _log_step(step_index, action, reward, bool(result.done), None)
-            observation_payload = observation_to_text(result.observation)
-            if result.done:
-                final_score = float(result.observation.score or 0.0)
+            _log_step(step_index, action, reward, done, None)
+            observation_payload = result["observation"]
+            if done:
+                final_score = float(observation_payload.get("score", 0.0) or 0.0)
                 success = final_score >= SUCCESS_SCORE_THRESHOLD
                 return final_score
 
@@ -175,19 +192,19 @@ def _run_task(env: Any, client: OpenAI | None, task_id: str) -> float:
             action_type="submit_decision",
             decision=DecisionPayload.model_validate(decision),
         )
-        result = env.step(final_action)
-        reward = float(result.reward or 0.0)
+        result = _step(http_client, base_url, final_action)
+        reward = float(result.get("reward") or 0.0)
+        done = bool(result.get("done"))
         rewards.append(reward)
         steps_taken += 1
-        _log_step(steps_taken, final_action, reward, bool(result.done), None)
-        final_score = float(result.observation.score or 0.0)
+        _log_step(steps_taken, final_action, reward, done, None)
+        final_score = float(result["observation"].get("score", 0.0) or 0.0)
         success = final_score >= SUCCESS_SCORE_THRESHOLD
         return final_score
     except Exception as exc:
         next_step = steps_taken + 1
-        error_text = str(exc)
         fallback_action = InvestigationAction(action_type="check_history")
-        _log_step(next_step, fallback_action, 0.0, True, error_text)
+        _log_step(next_step, fallback_action, 0.0, True, str(exc))
         raise
     finally:
         _log_end(success, steps_taken, rewards)
@@ -195,15 +212,18 @@ def _run_task(env: Any, client: OpenAI | None, task_id: str) -> float:
 
 def main() -> None:
     client = _build_client()
-    scores: dict[str, float] = {}
-    env = _create_env()
+    base_url, provider = _start_local_image_if_needed()
+
     try:
-        with env:
+        with httpx.Client(timeout=30.0) as http_client:
             for task_id in _load_task_ids():
-                scores[task_id] = _run_task(env, client, task_id)
+                _run_task(http_client, base_url, client, task_id)
     except Exception as exc:
         print(str(exc), file=sys.stderr)
         raise SystemExit(1) from exc
+    finally:
+        if provider is not None:
+            provider.stop_container()
 
 
 if __name__ == "__main__":

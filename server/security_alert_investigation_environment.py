@@ -39,6 +39,8 @@ class SecurityAlertInvestigationEnvironment(
 
     SUPPORTS_CONCURRENT_SESSIONS = True
     MAX_STEPS = 6
+    MIN_FINAL_SCORE = 0.01
+    MAX_FINAL_SCORE = 0.99
 
     def __init__(self) -> None:
         super().__init__()
@@ -168,7 +170,7 @@ class SecurityAlertInvestigationEnvironment(
 
         if not self._state.done and self._state.step_count >= self.MAX_STEPS:
             self._state.done = True
-            self._state.final_score = 0.0
+            self._state.final_score = self.MIN_FINAL_SCORE
             reward = -0.3
             info.result = "max_steps_exceeded"
             info.max_steps_exceeded = True
@@ -269,7 +271,11 @@ class SecurityAlertInvestigationEnvironment(
             components["efficiency"] = 0.05
         elif len(gathered) == max(expected_investigation.minimum_actions_before_submit - 1, 0):
             components["efficiency"] = 0.02
-        score = round(min(max(sum(components.values()), 0.0), 1.0), 2)
+        raw_score = sum(components.values())
+        score = round(
+            min(max(raw_score, self.MIN_FINAL_SCORE), self.MAX_FINAL_SCORE),
+            2,
+        )
         return score, components
 
     def _select_task(

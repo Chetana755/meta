@@ -15,7 +15,7 @@ tags:
 
 # Security Alert Investigation Environment
 
-An OpenEnv-compatible benchmark that simulates SOC alert triage. The agent receives a security alert, investigates using staged evidence-gathering actions, submits a final decision, and receives a deterministic score in the range `0.0` to `1.0`.
+An OpenEnv-compatible benchmark that simulates SOC alert triage. The agent receives a security alert, investigates using staged evidence-gathering actions, submits a final decision, and receives a deterministic score strictly inside the range `(0, 1)`.
 
 ## Overview
 
@@ -36,7 +36,7 @@ The benchmark is designed to test:
 - Tasks: `3`
 - Difficulty levels: `easy`, `medium`, `hard`
 - Max episode length: `6` steps
-- Final score range: `0.0` to `1.0`
+- Final score range: `(0, 1)`
 
 ## Tasks
 
@@ -123,7 +123,7 @@ Final grading components:
 - investigation completeness: `0.2`
 - efficiency: `0.1`
 
-Total score is clipped to `0.0..1.0`.
+Total score is clipped to stay strictly inside `(0, 1)`.
 
 The grader implementation lives in [server/security_alert_investigation_environment.py](/Users/pavan/Desktop/open/security_alert_investigation/server/security_alert_investigation_environment.py).
 
@@ -256,9 +256,9 @@ The script emits exactly these line types:
 
 Verified baseline scores:
 
-- `easy_malicious_bruteforce`: `1.0`
-- `medium_ambiguous_vendor_sync`: `1.0`
-- `hard_misleading_low_volume_exfil`: `1.0`
+- `easy_malicious_bruteforce`: `0.99`
+- `medium_ambiguous_vendor_sync`: `0.99`
+- `hard_misleading_low_volume_exfil`: `0.99`
 
 ## Deployment
 

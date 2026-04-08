@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 import sys
@@ -10,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from openai import OpenAI
+from openenv.core.containers.runtime import LocalDockerProvider
 
 from client import SecurityAlertInvestigationEnv
 from models import DecisionPayload, InvestigationAction, observation_to_text
@@ -134,9 +134,10 @@ def _log_end(success: bool, steps: int, rewards: list[float]) -> None:
 
 def _create_env() -> Any:
     if LOCAL_IMAGE_NAME:
-        return asyncio.run(
-            SecurityAlertInvestigationEnv.from_docker_image(LOCAL_IMAGE_NAME)
-        ).sync()
+        provider = LocalDockerProvider()
+        base_url = provider.start_container(LOCAL_IMAGE_NAME)
+        provider.wait_for_ready(base_url)
+        return SecurityAlertInvestigationEnv(base_url=base_url, provider=provider).sync()
     return SecurityAlertInvestigationEnv(base_url=ENV_BASE_URL).sync()
 
 

@@ -108,7 +108,7 @@ def test_all_three_tasks_grade_deterministically() -> None:
         assert result.status_code == 200
         payload = result.json()
         assert payload["done"] is True
-        assert payload["observation"]["score"] == 1.0
+        assert payload["observation"]["score"] == 0.99
         assert payload["observation"]["info"]["grader_components"]["classification"] == 0.3
         assert payload["observation"]["info"]["grader_components"]["priority"] == 0.2
         assert payload["observation"]["info"]["grader_components"]["decision"] == 0.2

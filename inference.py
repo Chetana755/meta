@@ -132,10 +132,10 @@ def _log_step(step: int, action: InvestigationAction, reward: float, done: bool,
     )
 
 
-def _log_end(success: bool, steps: int, rewards: list[float]) -> None:
+def _log_end(success: bool, steps: int, score: float, rewards: list[float]) -> None:
     rewards_text = ",".join(f"{reward:.2f}" for reward in rewards)
     print(
-        f"[END] success={_bool_text(success)} steps={steps} rewards={rewards_text}",
+        f"[END] success={_bool_text(success)} steps={steps} score={score:.3f} rewards={rewards_text}",
         flush=True,
     )
 
@@ -169,6 +169,7 @@ def _run_task(http_client: httpx.Client, base_url: str, client: OpenAI | None, t
     rewards: list[float] = []
     steps_taken = 0
     success = False
+    final_score = 0.01
     _log_start(task_id)
 
     try:
@@ -215,7 +216,7 @@ def _run_task(http_client: httpx.Client, base_url: str, client: OpenAI | None, t
         _log_step(next_step, fallback_action, 0.0, True, str(exc))
         raise
     finally:
-        _log_end(success, steps_taken, rewards)
+        _log_end(success, steps_taken, final_score, rewards)
 
 
 def main() -> None:

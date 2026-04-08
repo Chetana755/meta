@@ -274,7 +274,7 @@ class SecurityAlertInvestigationEnvironment(
         raw_score = sum(components.values())
         score = round(
             min(max(raw_score, self.MIN_FINAL_SCORE), self.MAX_FINAL_SCORE),
-            2,
+            3,
         )
         return score, components
 

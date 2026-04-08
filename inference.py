@@ -112,6 +112,14 @@ def _format_action(action: InvestigationAction) -> str:
     return json.dumps(action.model_dump(mode="json"), separators=(",", ":"), sort_keys=True)
 
 
+def _normalize_final_score(value: Any) -> float:
+    try:
+        score = float(value)
+    except (TypeError, ValueError):
+        score = 0.01
+    return min(max(score, 0.01), 0.99)
+
+
 def _log_start(task_id: str) -> None:
     print(f"[START] task={task_id} env={BENCHMARK} model={MODEL_NAME}", flush=True)
 
@@ -183,7 +191,7 @@ def _run_task(http_client: httpx.Client, base_url: str, client: OpenAI | None, t
             _log_step(step_index, action, reward, done, None)
             observation_payload = result["observation"]
             if done:
-                final_score = float(observation_payload.get("score", 0.0) or 0.0)
+                final_score = _normalize_final_score(observation_payload.get("score", 0.01))
                 success = final_score >= SUCCESS_SCORE_THRESHOLD
                 return final_score
 
@@ -198,7 +206,7 @@ def _run_task(http_client: httpx.Client, base_url: str, client: OpenAI | None, t
         rewards.append(reward)
         steps_taken += 1
         _log_step(steps_taken, final_action, reward, done, None)
-        final_score = float(result["observation"].get("score", 0.0) or 0.0)
+        final_score = _normalize_final_score(result["observation"].get("score", 0.01))
         success = final_score >= SUCCESS_SCORE_THRESHOLD
         return final_score
     except Exception as exc:
